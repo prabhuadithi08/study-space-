@@ -156,7 +156,11 @@ h1,h2,h3,p{margin-top:0}.greeting h1{font:800 clamp(23px,3vw,31px) Manrope,sans-
  <main id="dashboard">
   <header class="topbar">
    <div class="greeting"><small>YOUR PERSONAL LEARNING SPACE</small><h1>Hey, learner! <span>✦</span></h1><p>One focused session at a time. Let's make today count.</p></div>
-   <div class="top-actions"><div class="date-chip" id="todayDate">Today</div><div class="avatar">☺</div></div>
+   <div class="top-actions">
+    <button class="secondary" id="openSettingsBtn" style="display:flex;align-items:center;gap:6px" title="OpenRouter Settings"><span>⚙</span><span>OpenRouter</span></button>
+    <div class="date-chip" id="todayDate">Today</div>
+    <div class="avatar">☺</div>
+   </div>
   </header>
 
   <section class="metrics">
@@ -174,13 +178,13 @@ h1,h2,h3,p{margin-top:0}.greeting h1{font:800 clamp(23px,3vw,31px) Manrope,sans-
       <div class="upload-symbol">↑</div><h3>Drop your study files here</h3><p>or select files from your device</p>
       <input type="file" id="fileInput" multiple accept=".txt,.md,.csv,.pdf,.docx,.pptx">
       <button class="primary" id="chooseFiles">＋ Choose files</button>
-      <div class="upload-foot">TXT, MD, CSV, PDF, DOCX and PPTX · AI generation requires the local backend</div>
+      <div class="upload-foot">TXT, MD, CSV, PDF, DOCX and PPTX · Powered by OpenRouter open-source LLMs</div>
      </div>
      <div id="uploadStatus" style="font-size:11px;color:#858ba0;margin-top:10px;display:none"></div>
     </section>
 
     <section class="card" id="materials">
-     <div class="card-head"><div><h2>✨ Your study kit</h2><p>Notes, quick quizzes and flashcards in one place.</p></div><button class="link-btn" id="regenerateBtn">✦ Generate with Gemma</button></div>
+     <div class="card-head"><div><h2>✨ Your study kit</h2><p>Notes, quick quizzes and flashcards in one place.</p></div><button class="link-btn" id="regenerateBtn">✦ Generate with OpenRouter</button></div>
      <div class="material-tabs" role="tablist">
       <button class="active" data-tab="notes">📝 Notes</button><button data-tab="quiz">🎯 Quiz</button><button data-tab="flashcards">🗂 Flashcards</button>
      </div>
@@ -226,6 +230,38 @@ h1,h2,h3,p{margin-top:0}.greeting h1{font:800 clamp(23px,3vw,31px) Manrope,sans-
  </main>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<div class="modal-backdrop" id="settingsModal">
+ <div class="modal" style="max-width:480px">
+  <h2>⚙ OpenRouter Settings</h2>
+  <p>Configure your OpenRouter API key and open-source model. Your settings are saved locally in your browser.</p>
+  <label for="settingsApiKey">OpenRouter API Key</label>
+  <input id="settingsApiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+   <small style="color:#858ba0">Need a key? Visit <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style="color:var(--purple);text-decoration:underline">openrouter.ai/keys</a></small>
+   <button type="button" id="toggleKeyVisibility" style="background:transparent;color:var(--purple);font-size:11px;font-weight:700">Show key</button>
+  </div>
+
+  <label for="settingsModelSelect">Open Source Model</label>
+  <select id="settingsModelSelect">
+   <option value="openrouter/free">✦ OpenRouter Free Router (Auto-picks best free model)</option>
+   <option value="google/gemma-4-31b-it:free">Google: Gemma 4 31B (Free)</option>
+   <option value="google/gemma-4-26b-a4b-it:free">Google: Gemma 4 26B (Free)</option>
+   <option value="nvidia/nemotron-3.5-lightning:free" selected>NVIDIA: Nemotron 3.5 Lightning (Free, Fast)</option>
+   <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA: Nemotron 3 Super 120B (Free)</option>
+   <option value="thinkingmachines/inkling:free">Thinking Machines: Inkling (Free)</option>
+   <option value="meta-llama/llama-3.3-70b-instruct">Meta: Llama 3.3 70B Instruct</option>
+   <option value="qwen/qwen-2.5-72b-instruct">Qwen: Qwen 2.5 72B Instruct</option>
+   <option value="custom">Custom model ID…</option>
+  </select>
+  <input id="settingsCustomModel" placeholder="e.g. meta-llama/llama-3-8b-instruct" style="margin-top:8px;display:none">
+
+  <div id="settingsKeyStatus" style="font-size:11px;margin-top:12px;color:#858ba0;line-height:1.5"></div>
+  <div class="modal-actions">
+   <button class="secondary" id="closeSettings">Cancel</button>
+   <button class="primary" id="saveSettings">Save Settings</button>
+  </div>
+ </div>
+</div>
 <div class="modal-backdrop" id="welcomeModal">
  <div class="modal"><h2>Make this space yours ✨</h2><p>Start by adding the assignments you need to finish and your upcoming exams. You can edit everything later.</p>
   <label for="welcomeTask">What's one assignment you need to do?</label><input id="welcomeTask" placeholder="e.g. Biology chapter summary">
@@ -240,6 +276,9 @@ const $ = id => document.getElementById(id);
 const defaultState = {
  tasks: [], exams: [], files: [], focusSeconds: 0, timerSeconds: 25*60, timerRunning: false,
  activeTab: 'notes', flashIndex: 0, currentSource: '', currentSourceName: '', quiz: [],
+ openrouterApiKey: '',
+ openrouterModel: 'nvidia/nemotron-3.5-lightning:free',
+ backendHasKey: false,
  results: [
   {name:'Warm-up quiz',type:'quiz',score:52,label:'Week 1'},
   {name:'Topic check',type:'test',score:61,label:'Week 2'},
@@ -300,7 +339,7 @@ function renderMaterials(){
  const body=$('materialBody');
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.activeTab));
  if(state.activeTab==='notes'){
-  body.innerHTML=state.notes.map((n,i)=>`<div class="note-line"><div class="note-bullet">${String(i+1).padStart(2,'0')}</div><div><strong>${escapeHtml(n[0])}</strong><p>${escapeHtml(n[1])}</p></div></div>`).join('')+`<div style="font-size:10px;color:#a0a4b5;margin-top:9px">${state.currentSource?'Study kit generated from '+escapeHtml(state.currentSourceName)+'. Check key details against your source.':'Example notes · Upload study material, then select “Generate with Gemma”.'}</div>`;
+  body.innerHTML=state.notes.map((n,i)=>`<div class="note-line"><div class="note-bullet">${String(i+1).padStart(2,'0')}</div><div><strong>${escapeHtml(n[0])}</strong><p>${escapeHtml(n[1])}</p></div></div>`).join('')+`<div style="font-size:10px;color:#a0a4b5;margin-top:9px">${state.currentSource?'Study kit generated from '+escapeHtml(state.currentSourceName)+'. Check key details against your source.':'Example notes · Upload study material, then select “Generate with OpenRouter”.'}</div>`;
  }else if(state.activeTab==='flashcards'){
   const f=state.flashcards[state.flashIndex%state.flashcards.length];
   body.innerHTML=`<div class="flashcard" id="flipCard"><div class="fc-label">${$('fileCount').textContent.includes('0')?'QUICK STUDY CARD':'YOUR STUDY CARD'} · ${state.flashIndex+1}/${state.flashcards.length}</div><div class="fc-text">${escapeHtml(f.front)}</div><div class="fc-hint">Tap to flip and reveal answer ↻</div></div><div class="flash-controls"><button class="round-btn" id="prevCard">←</button><span style="font-size:10px;color:#999fb0">Learn at your own pace</span><button class="round-btn" id="nextCard">→</button></div>`;
@@ -347,7 +386,7 @@ async function addFile(file){
   const result=await response.json();
   if(!response.ok) throw new Error(result.error||'Could not read this file');
   state.currentSource=result.text;state.currentSourceName=file.name;saveState();
-  $('uploadStatus').textContent=`${file.name} imported (${result.characters.toLocaleString()} characters). Select “Generate with Gemma” to create a study kit.`;
+  $('uploadStatus').textContent=`${file.name} imported (${result.characters.toLocaleString()} characters). Select “Generate with OpenRouter” to create a study kit.`;
   toast('Study material imported successfully');
  } catch(err) {
   $('uploadStatus').textContent=`Could not extract ${file.name}: ${err.message}. Make sure the StudySpace backend is running and the file type is supported.`;
@@ -357,9 +396,20 @@ async function addFile(file){
 async function generateStudyKit(){
  if(!state.currentSource.trim()){toast('Upload a study file first');return}
  const btn=$('regenerateBtn');const old=btn.textContent;btn.disabled=true;btn.textContent='Generating…';
- $('uploadStatus').style.display='block';$('uploadStatus').textContent='Gemma is reading your material and creating notes, quiz questions, and flashcards…';
+ const activeModel = state.openrouterModel || 'nvidia/nemotron-3.5-lightning:free';
+ $('uploadStatus').style.display='block';
+ $('uploadStatus').textContent=`OpenRouter model (${activeModel}) is reading your material and creating notes, quiz questions, and flashcards…`;
  try{
-  const response=await fetch('/api/generate-study-kit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:state.currentSource,filename:state.currentSourceName})});
+  const response=await fetch('/api/generate-study-kit',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({
+    text:state.currentSource,
+    filename:state.currentSourceName,
+    apiKey:state.openrouterApiKey || '',
+    model:state.openrouterModel || ''
+   })
+  });
   const result=await response.json();if(!response.ok)throw new Error(result.error||'Generation failed');
   const kit=result.study_kit;
   if(!Array.isArray(kit.notes)||!Array.isArray(kit.quiz)||!Array.isArray(kit.flashcards))throw new Error('The model returned an unexpected format. Please try again.');
@@ -368,10 +418,64 @@ async function generateStudyKit(){
   state.flashcards=kit.flashcards.map(c=>({front:String(c.front||c.question||''),back:String(c.back||c.answer||'')})).filter(c=>c.front&&c.back);
   if(!state.notes.length||!state.flashcards.length||!state.quiz.length)throw new Error('The model returned an incomplete study kit. Try again with a shorter or clearer document.');
   state.quizIndex=0;state.flashIndex=0;state.quizAnswered=false;state.activeTab='notes';saveState();renderMaterials();
-  $('uploadStatus').textContent=`Study kit generated from ${state.currentSourceName} using ${result.model}. Review it against your source before relying on it.`;toast('Your AI study kit is ready ✨');
- }catch(err){$('uploadStatus').textContent=`AI generation failed: ${err.message}. Check that Ollama is running and the configured model is installed.`;toast('Could not generate study kit');}
+  $('uploadStatus').textContent=`Study kit generated from ${state.currentSourceName} using ${result.model} on OpenRouter. Review it against your source before relying on it.`;toast('Your AI study kit is ready ✨');
+ }catch(err){
+  $('uploadStatus').textContent=`AI generation failed: ${err.message}`;
+  if(err.message.includes('API key') || err.message.includes('401') || err.message.includes('missing')){
+   toast('Please configure your OpenRouter API key');
+   openSettings();
+  } else {
+   toast('Could not generate study kit');
+  }
+ }
  finally{btn.disabled=false;btn.textContent=old;}
 }
+function openSettings(){
+ $('settingsApiKey').value = state.openrouterApiKey || '';
+ const model = state.openrouterModel || 'nvidia/nemotron-3.5-lightning:free';
+ const options = Array.from($('settingsModelSelect').options).map(o=>o.value);
+ if(options.includes(model)){
+  $('settingsModelSelect').value = model;
+  $('settingsCustomModel').style.display = 'none';
+ }else{
+  $('settingsModelSelect').value = 'custom';
+  $('settingsCustomModel').value = model;
+  $('settingsCustomModel').style.display = 'block';
+ }
+ updateSettingsStatus();
+ $('settingsModal').classList.add('show');
+}
+function closeSettings(){ $('settingsModal').classList.remove('show'); }
+function updateSettingsStatus(){
+ const el=$('settingsKeyStatus');
+ if(state.backendHasKey){
+  el.innerHTML='<span style="color:var(--teal)">✓ Backend has OPENROUTER_API_KEY configured.</span> You can override it here if desired.';
+ }else if(state.openrouterApiKey){
+  el.innerHTML='<span style="color:var(--teal)">✓ API key configured in browser.</span> Ready for generation.';
+ }else{
+  el.innerHTML='<span style="color:var(--orange)">! No API key detected.</span> Enter your key above or define <code>OPENROUTER_API_KEY</code> in <code>.env</code>.';
+ }
+}
+$('openSettingsBtn').onclick = openSettings;
+$('closeSettings').onclick = closeSettings;
+$('toggleKeyVisibility').onclick = ()=>{
+ const inp=$('settingsApiKey');
+ const isPass=inp.type==='password';
+ inp.type=isPass?'text':'password';
+ $('toggleKeyVisibility').textContent=isPass?'Hide key':'Show key';
+};
+$('settingsModelSelect').onchange = ()=>{
+ $('settingsCustomModel').style.display = $('settingsModelSelect').value === 'custom' ? 'block' : 'none';
+};
+$('saveSettings').onclick = ()=>{
+ state.openrouterApiKey = $('settingsApiKey').value.trim();
+ const sel = $('settingsModelSelect').value;
+ state.openrouterModel = sel === 'custom' ? ($('settingsCustomModel').value.trim() || 'nvidia/nemotron-3.5-lightning:free') : sel;
+ saveState();
+ closeSettings();
+ toast('OpenRouter settings saved ✨');
+ checkApiStatus();
+};
 $('chooseFiles').onclick=()=>$('fileInput').click();
 $('fileInput').addEventListener('change',e=>{[...e.target.files].forEach(addFile);e.target.value=''});
 const drop=$('dropZone');
@@ -398,7 +502,24 @@ $('timerStart').onclick=()=>{
 $('timerReset').onclick=()=>{stopTimer();state.timerSeconds=25*60;paintTimer();$('timerCaption').textContent='Ready when you are ✨';$('timerStart').textContent='▶ Start focus'};
 document.querySelectorAll('[data-scroll]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-scroll]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.scroll).scrollIntoView({behavior:'smooth',block:'start'})});
 renderMaterials();renderTasks();renderExams();renderChart();paintTimer();updateMetrics();
-fetch('/api/health').then(r=>r.json()).then(info=>{if(!info.ok){$('uploadStatus').style.display='block';$('uploadStatus').textContent='Ollama is not reachable. Open Ollama before generating AI study kits.';}else if(!info.model_installed){$('uploadStatus').style.display='block';$('uploadStatus').textContent=`Ollama is running, but model “${info.model}” is not installed. Run: ollama pull ${info.model}`;}}).catch(()=>{ $('uploadStatus').style.display='block';$('uploadStatus').textContent='Start StudySpace with the Python backend (see README) to enable document import and Gemma AI generation.'; });
+function checkApiStatus(){
+ fetch('/api/health').then(r=>r.json()).then(info=>{
+  state.backendHasKey = Boolean(info.has_api_key);
+  if(info.ok && !info.has_api_key && !state.openrouterApiKey){
+   $('uploadStatus').style.display='block';
+   $('uploadStatus').innerHTML='<strong>OpenRouter API key needed:</strong> Set it in <a href="#" id="openKeyLink" style="color:var(--purple);font-weight:700;text-decoration:underline">⚙ OpenRouter Settings</a> or in your <code>.env</code> file.';
+   $('openKeyLink')?.addEventListener('click', (e)=>{ e.preventDefault(); openSettings(); });
+  } else if(info.ok) {
+   if(!$('uploadStatus').textContent.includes('imported') && !$('uploadStatus').textContent.includes('generated')){
+    $('uploadStatus').style.display='none';
+   }
+  }
+ }).catch(()=>{
+  $('uploadStatus').style.display='block';
+  $('uploadStatus').textContent='Start StudySpace with the Python backend (app.py) to enable document import and OpenRouter generation.';
+ });
+}
+checkApiStatus();
 if(!localStorage.getItem('studyspace-welcome-seen'))setTimeout(()=>$('welcomeModal').classList.add('show'),500);
 const closeWelcome=()=>{localStorage.setItem('studyspace-welcome-seen','1');$('welcomeModal').classList.remove('show')};
 $('saveWelcome').onclick=()=>{const task=$('welcomeTask').value.trim(),exam=$('welcomeExam').value.trim(),date=$('welcomeDate').value;if(task)state.tasks.push({id:Date.now(),name:task,priority:'medium',done:false});if(exam&&date)state.exams.push({id:Date.now()+1,name:exam,date});renderTasks();renderExams();closeWelcome();toast('Your study space is ready ✨')};
