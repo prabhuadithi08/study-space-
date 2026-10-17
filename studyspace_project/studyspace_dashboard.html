@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudySpace — Your AI Study Buddy</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{
+ --bg:#f6f7fb;--surface:#fff;--ink:#20243a;--muted:#81879e;--line:#e9eaf2;
+ --purple:#7567f8;--purple-soft:#f0eeff;--teal:#2dbda8;--teal-soft:#e6f8f4;
+ --orange:#f4a340;--orange-soft:#fff4e5;--pink:#f078a7;--pink-soft:#fff0f6;
+ --blue:#5296f4;--blue-soft:#eaf3ff;--shadow:0 10px 30px #30365b0b;
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}
+.app{min-height:100vh;display:grid;grid-template-columns:255px minmax(0,1fr)}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:24px 17px;display:flex;flex-direction:column;gap:26px}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px;font:800 19px Manrope,sans-serif;letter-spacing:-.7px}
+.logo-mark{width:37px;height:37px;border-radius:13px;background:linear-gradient(135deg,#897cff,#6556ed);display:grid;place-items:center;color:white;font-size:20px;box-shadow:0 7px 15px #7567f83a}
+.logo span{color:var(--purple)}
+.side-label{font-size:10px;letter-spacing:1.7px;font-weight:800;color:#a0a4b6;margin:0 10px 9px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;background:transparent;text-align:left;color:#747a91;font-weight:600;font-size:13px}
+.nav button .ico{width:21px;text-align:center;font-size:17px}
+.nav button.active{background:var(--purple-soft);color:var(--purple)}
+.nav button:hover:not(.active){background:#f8f8fc}
+.library-list{display:flex;flex-direction:column;gap:5px}
+.library-item{display:flex;gap:9px;align-items:center;padding:9px 10px;border-radius:10px;color:#646b82;font-size:12px;min-width:0}
+.library-item .file-ico{width:30px;height:32px;border-radius:9px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;flex-shrink:0}
+.library-item .file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.library-item small{display:block;color:#a2a7b8;margin-top:3px;font-size:10px}
+.library-empty{padding:10px;color:#a0a4b6;font-size:11px;line-height:1.6}
+.side-bottom{margin-top:auto}
+.streak-card{background:linear-gradient(135deg,#fff6e7,#fff0df);border:1px solid #ffe7c5;border-radius:16px;padding:15px}
+.streak-top{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:12px}
+.streak-card p{font-size:11px;line-height:1.6;color:#9a815f;margin:8px 0 12px}
+.streak-dots{display:flex;gap:6px}.streak-dots span{width:22px;height:22px;border-radius:7px;background:#ffdaa3;display:grid;place-items:center;font-size:10px;color:#9a6926}
+main{min-width:0;padding:26px clamp(18px,3vw,42px) 36px;max-width:1600px;width:100%;margin:0 auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:27px}
+.greeting small{color:var(--purple);font-weight:800;letter-spacing:1.6px;font-size:10px}
+h1,h2,h3,p{margin-top:0}.greeting h1{font:800 clamp(23px,3vw,31px) Manrope,sans-serif;letter-spacing:-1px;margin:6px 0}
+.greeting p{color:var(--muted);font-size:13px;margin:0}
+.top-actions{display:flex;align-items:center;gap:10px}
+.date-chip,.avatar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:#72788e;font-size:12px}
+.avatar{width:40px;height:40px;padding:0;display:grid;place-items:center;background:#e7e4ff;color:var(--purple);font-size:18px;border:0}
+.primary{background:var(--purple);color:white;border-radius:11px;padding:11px 15px;font-weight:700;font-size:12px;box-shadow:0 6px 13px #7567f829;transition:.18s}
+.primary:hover{transform:translateY(-1px);filter:brightness(1.04)}
+.secondary{background:#fff;color:#666d83;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-weight:700;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:19px}
+.metric{background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:var(--shadow);min-width:0}
+.metric-head{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#82889d;font-size:11px;font-weight:600}
+.metric-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px}
+.metric-value{font:800 27px Manrope,sans-serif;letter-spacing:-1px;margin:12px 0 3px}
+.metric-sub{color:#9a9fb0;font-size:10px}.up{color:var(--teal);font-weight:700}
+.icon-purple{background:var(--purple-soft);color:var(--purple)}.icon-teal{background:var(--teal-soft);color:var(--teal)}.icon-orange{background:var(--orange-soft);color:var(--orange)}.icon-pink{background:var(--pink-soft);color:var(--pink)}
+.content-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr);gap:17px;align-items:start}
+.left-col,.right-col{display:flex;flex-direction:column;gap:17px;min-width:0}
+.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:17px}
+.card-head h2{font:800 16px Manrope,sans-serif;letter-spacing:-.3px;margin:0}
+.card-head p{font-size:11px;color:var(--muted);margin:5px 0 0}
+.link-btn{background:transparent;color:var(--purple);font-size:11px;font-weight:800;padding:5px}
+.upload-zone{border:1.5px dashed #c9c5ff;border-radius:15px;background:linear-gradient(120deg,#faf9ff,#f5f4ff);padding:22px 15px;text-align:center;transition:.2s}
+.upload-zone.drag{background:#eceaff;border-color:var(--purple)}
+.upload-symbol{width:46px;height:46px;border-radius:15px;background:#e9e6ff;color:var(--purple);display:grid;place-items:center;font-size:22px;margin:0 auto 10px}
+.upload-zone h3{font-size:13px;margin:0 0 6px}.upload-zone p{font-size:11px;color:var(--muted);margin:0 0 14px}
+.upload-zone input{display:none}.upload-foot{font-size:10px;color:#a3a7b7;margin-top:11px}
+.material-tabs{display:flex;gap:5px;background:#f5f5fa;padding:4px;border-radius:11px}
+.material-tabs button{flex:1;background:transparent;border-radius:8px;padding:9px 7px;color:#83889b;font-size:11px;font-weight:700}
+.material-tabs button.active{background:#fff;color:var(--purple);box-shadow:0 2px 8px #2c31550c}
+.material-body{padding-top:15px;min-height:160px}
+.note-line{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid #f0f0f6;align-items:flex-start}
+.note-line:last-child{border-bottom:0}.note-bullet{width:27px;height:27px;border-radius:9px;background:var(--purple-soft);color:var(--purple);display:grid;place-items:center;flex-shrink:0;font-size:12px}
+.note-line strong{display:block;font-size:12px;margin:2px 0 4px}.note-line p{font-size:11px;color:#858ba0;line-height:1.6;margin:0}
+.flashcard{border-radius:15px;background:linear-gradient(135deg,#f2efff,#ece9ff);border:1px solid #ded9ff;padding:24px;text-align:center;min-height:150px;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:.2s}
+.flashcard:hover{transform:translateY(-2px)}.flashcard .fc-label{font-size:9px;letter-spacing:1.7px;color:#8c80e9;font-weight:800;margin-bottom:12px}
+.flashcard .fc-text{font:700 17px Manrope,sans-serif;line-height:1.5}.flashcard .fc-hint{font-size:10px;color:#9690c7;margin-top:13px}
+.flash-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.round-btn{width:34px;height:34px;border-radius:10px;background:#f4f3fb;color:#666d83;font-weight:800}
+.quiz-question{font-size:13px;font-weight:700;line-height:1.6;margin:4px 0 13px}
+.quiz-option{width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:white;color:#646b82;font-size:11px;margin:5px 0;transition:.15s}
+.quiz-option:hover{border-color:#b9b1ff;background:#faf9ff}.quiz-option.correct{border-color:#63cfb6;background:#e8faf5;color:#168c74}.quiz-option.wrong{border-color:#f2a2b6;background:#fff0f4;color:#cf5279}
+.quiz-feedback{font-size:11px;color:var(--teal);min-height:17px;margin-top:8px;font-weight:700}
+.focus-card{background:linear-gradient(135deg,#6d5df4,#9183ff);color:white;overflow:hidden;position:relative}
+.focus-card:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;border:1px solid #ffffff2a;right:-43px;top:-55px;box-shadow:0 0 0 20px #ffffff08,0 0 0 40px #ffffff06}
+.focus-card .card-head h2{color:white}.focus-card .card-head p{color:#e0dcff}
+.focus-badge{background:#ffffff21;border:1px solid #ffffff35;padding:6px 8px;border-radius:8px;font-size:10px}
+.timer{font:800 42px Manrope,sans-serif;letter-spacing:1px;text-align:center;margin:18px 0 5px;position:relative;z-index:1}
+.timer-caption{text-align:center;font-size:11px;color:#e5e2ff;position:relative;z-index:1}
+.timer-controls{display:flex;justify-content:center;gap:8px;margin-top:19px;position:relative;z-index:1}
+.timer-controls button{border-radius:10px;padding:10px 14px;font-size:11px;font-weight:800}
+.timer-start{background:white;color:#6555e8}.timer-reset{background:#ffffff20;color:white;border:1px solid #ffffff35}
+.focus-progress{height:5px;border-radius:8px;background:#ffffff33;margin-top:18px;overflow:hidden}.focus-progress div{height:100%;width:0;background:#b8ffdf;transition:width .3s}
+.chart-legend{display:flex;gap:13px;flex-wrap:wrap;font-size:10px;color:#83889b}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.chart-wrap{height:180px;position:relative;margin-top:12px}
+.chart-wrap svg{width:100%;height:100%;overflow:visible}
+.chart-labels{display:flex;justify-content:space-between;color:#a0a4b5;font-size:9px;margin-top:5px}
+.chart-summary{display:flex;gap:10px;margin-top:14px}
+.summary-pill{flex:1;background:#f7f7fc;border-radius:11px;padding:11px;min-width:0}
+.summary-pill small{display:block;color:#9297a9;font-size:10px}.summary-pill strong{display:block;font:800 17px Manrope,sans-serif;margin-top:5px}.positive{color:var(--teal)}.negative{color:#e96e91}
+.task-list{display:flex;flex-direction:column;gap:9px}
+.task{display:flex;gap:10px;align-items:center;border:1px solid #eff0f5;border-radius:12px;padding:11px}
+.task-check{width:19px;height:19px;border-radius:6px;border:1.5px solid #d6d8e5;background:white;display:grid;place-items:center;color:white;flex-shrink:0}
+.task.done .task-check{background:var(--teal);border-color:var(--teal)}
+.task-main{flex:1;min-width:0}.task-main strong{font-size:11px;display:block;overflow-wrap:anywhere}.task-main small{font-size:10px;color:#9a9fb0;display:block;margin-top:4px}
+.task.done .task-main strong{text-decoration:line-through;color:#9da2b2}
+.priority{font-size:9px;padding:5px 7px;border-radius:7px;font-weight:800}.high{color:#d75b80;background:#fff0f5}.medium{color:#b97b1c;background:#fff4df}.low{color:#289d88;background:#e7f8f3}
+.inline-form{display:flex;gap:7px;margin-top:12px}.inline-form input,.inline-form select,.inline-form textarea{min-width:0;width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#fbfbfe;color:var(--ink);font-size:11px;outline:none}
+.inline-form input:focus,.inline-form select:focus{border-color:#b6afff}
+.exam{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid #f0f0f6}.exam:last-child{border-bottom:0}
+.exam-date{width:43px;height:47px;border-radius:11px;background:var(--pink-soft);color:#d96795;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.exam-date strong{font:800 16px Manrope,sans-serif}.exam-date small{font-size:8px;letter-spacing:1px;font-weight:800}
+.exam-info{flex:1;min-width:0}.exam-info strong{font-size:11px;display:block}.exam-info small{font-size:10px;color:#9a9fb0;display:block;margin-top:4px}
+.exam-countdown{font-size:10px;color:var(--purple);font-weight:800;white-space:nowrap}
+.empty{padding:17px;text-align:center;color:#999fb1;font-size:11px;line-height:1.6;background:#fafaff;border-radius:11px}
+.toast{position:fixed;bottom:22px;right:22px;background:#262b43;color:white;border-radius:12px;padding:13px 17px;font-size:12px;box-shadow:0 10px 30px #20243a30;opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s;z-index:10}
+.toast.show{opacity:1;transform:translateY(0)}
+.modal-backdrop{position:fixed;inset:0;background:#1b1d31a6;display:none;place-items:center;padding:20px;z-index:20}
+.modal-backdrop.show{display:grid}.modal{width:min(450px,100%);background:white;border-radius:19px;padding:23px;box-shadow:0 20px 80px #17182d40}
+.modal h2{font:800 20px Manrope,sans-serif;margin:0 0 7px}.modal p{color:var(--muted);font-size:12px;line-height:1.6}
+.modal label{display:block;font-size:11px;font-weight:700;color:#6e748b;margin:13px 0 6px}.modal input,.modal select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;outline:none}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+@media(max-width:1150px){.app{grid-template-columns:220px minmax(0,1fr)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid{grid-template-columns:minmax(0,1fr)}.right-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.focus-card{grid-column:span 1}}
+@media(max-width:720px){.app{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid var(--line);padding:14px;gap:13px}.logo{padding:0}.nav{flex-direction:row;overflow:auto}.nav button{white-space:nowrap;padding:10px}.nav button .ico{width:auto}.nav button span:not(.ico){display:inline}.side-label,.library-section,.side-bottom{display:none}.sidebar>div:nth-child(2){display:none}.sidebar>div:nth-child(3){display:none}main{padding:20px 13px}.topbar{align-items:flex-start}.date-chip{display:none}.right-col{display:flex}.metrics{gap:9px}.metric{padding:13px}.metric-value{font-size:23px}.card{padding:16px}}
+@media(max-width:420px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.greeting p{max-width:220px;line-height:1.5}.chart-summary{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+ <aside class="sidebar">
+  <div class="logo"><div class="logo-mark">✦</div>Study<span>Space</span></div>
+  <div>
+   <p class="side-label">WORKSPACE</p>
+   <nav class="nav">
+    <button class="active" data-scroll="dashboard"><span class="ico">⌂</span><span>Dashboard</span></button>
+    <button data-scroll="materials"><span class="ico">▤</span><span>My study kits</span></button>
+    <button data-scroll="tasks"><span class="ico">✓</span><span>Assignments</span></button>
+    <button data-scroll="exams"><span class="ico">◷</span><span>Exam calendar</span></button>
+    <button data-scroll="progress"><span class="ico">↗</span><span>My progress</span></button>
+   </nav>
+  </div>
+  <div class="library-section">
+   <p class="side-label">YOUR LIBRARY <span id="fileCount">· 0</span></p>
+   <div class="library-list" id="libraryList"><div class="library-empty">Upload a file to start building your personal study library.</div></div>
+  </div>
+  <div class="side-bottom">
+   <div class="streak-card">
+    <div class="streak-top"><span>🔥 Study streak</span><span id="streakNumber">0 days</span></div>
+    <p>Little sessions add up. Show up today to keep your momentum going!</p>
+    <div class="streak-dots"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+   </div>
+  </div>
+ </aside>
+
+ <main id="dashboard">
+  <header class="topbar">
+   <div class="greeting"><small>YOUR PERSONAL LEARNING SPACE</small><h1>Hey, learner! <span>✦</span></h1><p>One focused session at a time. Let's make today count.</p></div>
+   <div class="top-actions"><div class="date-chip" id="todayDate">Today</div><div class="avatar">☺</div></div>
+  </header>
+
+  <section class="metrics">
+   <div class="metric"><div class="metric-head"><span>FOCUS TIME</span><span class="metric-icon icon-purple">◷</span></div><div class="metric-value" id="focusMetric">0m</div><div class="metric-sub"><span class="up">●</span> Time studied in StudySpace</div></div>
+   <div class="metric"><div class="metric-head"><span>ASSIGNMENTS DONE</span><span class="metric-icon icon-teal">✓</span></div><div class="metric-value" id="doneMetric">0</div><div class="metric-sub">Nice work, keep it going!</div></div>
+   <div class="metric"><div class="metric-head"><span>STILL TO DO</span><span class="metric-icon icon-orange">✎</span></div><div class="metric-value" id="pendingMetric">0</div><div class="metric-sub">You've got this 💪</div></div>
+   <div class="metric"><div class="metric-head"><span>UPCOMING EXAMS</span><span class="metric-icon icon-pink">▦</span></div><div class="metric-value" id="examMetric">0</div><div class="metric-sub">Plan ahead, stress less</div></div>
+  </section>
+
+  <div class="content-grid">
+   <div class="left-col">
+    <section class="card">
+     <div class="card-head"><div><h2>📚 Turn your files into study kits</h2><p>Upload notes, slides or reading material to get started.</p></div><span class="metric-icon icon-purple">✦</span></div>
+     <div class="upload-zone" id="dropZone">
+      <div class="upload-symbol">↑</div><h3>Drop your study files here</h3><p>or select files from your device</p>
+      <input type="file" id="fileInput" multiple accept=".txt,.md,.csv,.pdf,.docx,.pptx">
+      <button class="primary" id="chooseFiles">＋ Choose files</button>
+      <div class="upload-foot">TXT, MD, CSV, PDF, DOCX and PPTX · AI generation requires the local backend</div>
+     </div>
+     <div id="uploadStatus" style="font-size:11px;color:#858ba0;margin-top:10px;display:none"></div>
+    </section>
+
+    <section class="card" id="materials">
+     <div class="card-head"><div><h2>✨ Your study kit</h2><p>Notes, quick quizzes and flashcards in one place.</p></div><button class="link-btn" id="regenerateBtn">✦ Generate with Gemma</button></div>
+     <div class="material-tabs" role="tablist">
+      <button class="active" data-tab="notes">📝 Notes</button><button data-tab="quiz">🎯 Quiz</button><button data-tab="flashcards">🗂 Flashcards</button>
+     </div>
+     <div class="material-body" id="materialBody"></div>
+    </section>
+
+    <section class="card" id="progress">
+     <div class="card-head"><div><h2>📈 Your improvement</h2><p>Track quiz scores and test marks over time.</p></div><select id="chartRange" style="border:1px solid var(--line);border-radius:9px;padding:8px;color:#737990;background:#fff;font-size:10px"><option value="all">All results</option><option value="recent">Recent results</option></select></div>
+     <div class="chart-legend"><span><i class="legend-dot" style="background:#7567f8"></i>Quiz scores</span><span><i class="legend-dot" style="background:#2dbda8"></i>Test marks</span><span><i class="legend-dot" style="background:#f4a340"></i>Target</span></div>
+     <div class="chart-wrap" id="chartWrap"></div>
+     <div class="chart-labels" id="chartLabels"></div>
+     <div class="chart-summary"><div class="summary-pill"><small>Latest score</small><strong id="latestScore">—</strong></div><div class="summary-pill"><small>Overall change</small><strong id="scoreChange" class="positive">—</strong></div><div class="summary-pill"><small>Logged results</small><strong id="resultCount">0</strong></div></div>
+     <div class="inline-form"><input id="scoreName" placeholder="Quiz / test name"><input id="scoreValue" type="number" min="0" max="100" placeholder="Mark /100"><select id="scoreType"><option value="quiz">Quiz</option><option value="test">Test</option></select><button class="primary" id="addScoreBtn">＋</button></div>
+     <p style="font-size:10px;color:#a0a4b5;margin:8px 0 0">Add your own results to update the graph. New installs start with clearly labelled sample results.</p>
+    </section>
+   </div>
+
+   <div class="right-col">
+    <section class="card focus-card">
+     <div class="card-head"><div><h2>⏱ Focus room</h2><p>Give your brain a little breathing space.</p></div><span class="focus-badge">25 MIN</span></div>
+     <div class="timer" id="timerDisplay">25:00</div><div class="timer-caption" id="timerCaption">Ready when you are ✨</div>
+     <div class="timer-controls"><button class="timer-start" id="timerStart">▶ Start focus</button><button class="timer-reset" id="timerReset">↻ Reset</button></div>
+     <div class="focus-progress"><div id="focusProgress"></div></div>
+    </section>
+
+    <section class="card" id="tasks">
+     <div class="card-head"><div><h2>✅ Assignments</h2><p>Small steps, big progress.</p></div><button class="link-btn" id="addTaskBtn">＋ Add</button></div>
+     <div class="task-list" id="taskList"></div>
+     <form class="inline-form" id="taskForm"><input id="taskInput" required placeholder="Enter an assignment…"><select id="taskPriority" style="max-width:95px"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><button class="primary" type="submit">Add</button></form>
+    </section>
+
+    <section class="card" id="exams">
+     <div class="card-head"><div><h2>🗓 Upcoming exams</h2><p>Make future-you feel prepared.</p></div><button class="link-btn" id="addExamBtn">＋ Add</button></div>
+     <div id="examList"></div>
+     <form class="inline-form" id="examForm" style="display:none;flex-wrap:wrap">
+      <input id="examName" required placeholder="Subject / exam name">
+      <input id="examDate" required type="date" style="flex:1">
+      <button class="primary" type="submit">Save exam</button>
+     </form>
+    </section>
+   </div>
+  </div>
+ </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div class="modal-backdrop" id="welcomeModal">
+ <div class="modal"><h2>Make this space yours ✨</h2><p>Start by adding the assignments you need to finish and your upcoming exams. You can edit everything later.</p>
+  <label for="welcomeTask">What's one assignment you need to do?</label><input id="welcomeTask" placeholder="e.g. Biology chapter summary">
+  <label for="welcomeExam">Next exam (optional)</label><input id="welcomeExam" placeholder="e.g. Chemistry midterm">
+  <label for="welcomeDate">Exam date (optional)</label><input id="welcomeDate" type="date">
+  <div class="modal-actions"><button class="secondary" id="skipWelcome">I'll do this later</button><button class="primary" id="saveWelcome">Let's go →</button></div>
+ </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const defaultState = {
+ tasks: [], exams: [], files: [], focusSeconds: 0, timerSeconds: 25*60, timerRunning: false,
+ activeTab: 'notes', flashIndex: 0, currentSource: '', currentSourceName: '', quiz: [],
+ results: [
+  {name:'Warm-up quiz',type:'quiz',score:52,label:'Week 1'},
+  {name:'Topic check',type:'test',score:61,label:'Week 2'},
+  {name:'Practice quiz',type:'quiz',score:68,label:'Week 3'},
+  {name:'Unit test',type:'test',score:72,label:'Week 4'},
+  {name:'Revision quiz',type:'quiz',score:81,label:'Week 5'}
+ ],
+ flashcards: [
+  {front:'What is active recall?',back:'Trying to retrieve information from memory without looking at the answer.'},
+  {front:'What is spaced repetition?',back:'Reviewing information at increasing intervals to strengthen long-term memory.'},
+  {front:'What makes a good study session?',back:'One clear goal, focused work, short breaks and a quick review.'}
+ ],
+ notes: [
+  ['Start with the big idea','Identify the main concept before memorising details.'],
+  ['Make connections','Link each new idea to something you already understand.'],
+  ['Test your memory','Close your notes and explain the topic in your own words.']
+ ],
+ quizAnswered: false
+};
+let state = {...defaultState};
+try { const saved = JSON.parse(localStorage.getItem('studyspace-state') || 'null'); if(saved && typeof saved === 'object') state = {...state, ...saved, timerRunning:false, timerSeconds:25*60}; } catch(e) { console.warn('Could not load saved StudySpace data', e); }
+function saveState(){ try { const {timerInterval, focusInterval, ...safeState} = state; localStorage.setItem('studyspace-state', JSON.stringify(safeState)); } catch(e) { console.warn('Could not save StudySpace data', e); } }
+const today = new Date();
+$('todayDate').textContent = today.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function updateMetrics(){
+ saveState();
+ $('focusMetric').textContent=state.focusSeconds>=3600?`${Math.floor(state.focusSeconds/3600)}h ${Math.floor(state.focusSeconds%3600/60)}m`:`${Math.floor(state.focusSeconds/60)}m`;
+ $('doneMetric').textContent=state.tasks.filter(t=>t.done).length;
+ $('pendingMetric').textContent=state.tasks.filter(t=>!t.done).length;
+ $('examMetric').textContent=state.exams.filter(e=>daysUntil(e.date)>=0).length;
+ $('fileCount').textContent=`· ${state.files.length}`;
+}
+function daysUntil(date){const d=new Date(date+'T00:00:00');return Math.ceil((d-new Date(new Date().toDateString()))/86400000)}
+function renderTasks(){
+ const list=$('taskList');
+ if(!state.tasks.length){list.innerHTML='<div class="empty">Your task list is a blank canvas 🌱<br>Add an assignment below to get started.</div>';updateMetrics();return}
+ list.innerHTML=state.tasks.map(t=>`<div class="task ${t.done?'done':''}"><button class="task-check" data-task="${t.id}" aria-label="Toggle task">${t.done?'✓':''}</button><div class="task-main"><strong>${escapeHtml(t.name)}</strong><small>${t.done?'Completed — nice work!':'Added to your to-do list'}</small></div><span class="priority ${t.priority}">${t.priority}</span><button class="link-btn" data-delete-task="${t.id}" aria-label="Delete task">×</button></div>`).join('');
+ list.querySelectorAll('[data-task]').forEach(b=>b.onclick=()=>{const t=state.tasks.find(x=>x.id==b.dataset.task);t.done=!t.done;renderTasks();updateMetrics();toast(t.done?'Assignment completed! 🎉':'Moved back to pending')});
+ list.querySelectorAll('[data-delete-task]').forEach(b=>b.onclick=()=>{state.tasks=state.tasks.filter(t=>t.id!=b.dataset.deleteTask);renderTasks();updateMetrics()});
+ updateMetrics();
+}
+function renderExams(){
+ const list=$('examList');
+ const exams=[...state.exams].sort((a,b)=>a.date.localeCompare(b.date));
+ if(!exams.length){list.innerHTML='<div class="empty">No exams added yet 📅<br>Add a date and we’ll keep it on your radar.</div>';updateMetrics();return}
+ list.innerHTML=exams.map(e=>{const d=new Date(e.date+'T00:00:00');const n=daysUntil(e.date);return `<div class="exam"><div class="exam-date"><strong>${d.getDate()}</strong><small>${d.toLocaleDateString(undefined,{month:'short'}).toUpperCase()}</small></div><div class="exam-info"><strong>${escapeHtml(e.name)}</strong><small>${d.toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'})}</small></div><span class="exam-countdown">${n<0?'Passed':n===0?'Today':`${n}d left`}</span><button class="link-btn" data-delete-exam="${e.id}">×</button></div>`}).join('');
+ list.querySelectorAll('[data-delete-exam]').forEach(b=>b.onclick=()=>{state.exams=state.exams.filter(e=>e.id!=b.dataset.deleteExam);renderExams();updateMetrics()});
+ updateMetrics();
+}
+function renderLibrary(){
+ const list=$('libraryList');
+ if(!state.files.length){list.innerHTML='<div class="library-empty">Upload a file to start building your personal study library.</div>';return}
+ list.innerHTML=state.files.map(f=>`<div class="library-item"><div class="file-ico">${f.name.toLowerCase().endsWith('.pdf')?'PDF':'▤'}</div><div class="file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}<small>${f.size}</small></div></div>`).join('');
+}
+function renderMaterials(){
+ const body=$('materialBody');
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.activeTab));
+ if(state.activeTab==='notes'){
+  body.innerHTML=state.notes.map((n,i)=>`<div class="note-line"><div class="note-bullet">${String(i+1).padStart(2,'0')}</div><div><strong>${escapeHtml(n[0])}</strong><p>${escapeHtml(n[1])}</p></div></div>`).join('')+`<div style="font-size:10px;color:#a0a4b5;margin-top:9px">${state.currentSource?'Study kit generated from '+escapeHtml(state.currentSourceName)+'. Check key details against your source.':'Example notes · Upload study material, then select “Generate with Gemma”.'}</div>`;
+ }else if(state.activeTab==='flashcards'){
+  const f=state.flashcards[state.flashIndex%state.flashcards.length];
+  body.innerHTML=`<div class="flashcard" id="flipCard"><div class="fc-label">${$('fileCount').textContent.includes('0')?'QUICK STUDY CARD':'YOUR STUDY CARD'} · ${state.flashIndex+1}/${state.flashcards.length}</div><div class="fc-text">${escapeHtml(f.front)}</div><div class="fc-hint">Tap to flip and reveal answer ↻</div></div><div class="flash-controls"><button class="round-btn" id="prevCard">←</button><span style="font-size:10px;color:#999fb0">Learn at your own pace</span><button class="round-btn" id="nextCard">→</button></div>`;
+  let flipped=false;$('flipCard').onclick=()=>{flipped=!flipped;$('flipCard').querySelector('.fc-text').textContent=flipped?f.back:f.front;$('flipCard').querySelector('.fc-label').textContent=flipped?'ANSWER':'QUESTION'};
+  $('prevCard').onclick=()=>{state.flashIndex=(state.flashIndex-1+state.flashcards.length)%state.flashcards.length;renderMaterials()};
+  $('nextCard').onclick=()=>{state.flashIndex=(state.flashIndex+1)%state.flashcards.length;renderMaterials()};
+ }else{
+  const q = state.quiz.length ? state.quiz[state.quizIndex||0] : {question:'Which technique helps you check what you can remember without looking at your notes?',options:['Highlighting every paragraph','Active recall','Re-reading the same page repeatedly'],answer:1,explanation:'Active recall means retrieving information from memory.'};
+  body.innerHTML=`<div style="font-size:10px;color:#8f95a8;margin-bottom:10px">${state.quiz.length?'GENERATED FROM YOUR MATERIAL':'QUICK CHECK · STUDY SKILLS'}</div><div class="quiz-question">${escapeHtml(q.question)}</div><div id="quizOptions">${q.options.map((o,i)=>`<button class="quiz-option" data-answer="${i}">${String.fromCharCode(65+i)}. ${escapeHtml(o)}</button>`).join('')}</div><div class="quiz-feedback" id="quizFeedback"></div><button class="secondary" id="nextQuiz" style="margin-top:10px">${state.quiz.length?'Next question ↗':'Try again ↗'}</button>`;
+  $('quizOptions').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(state.quizAnswered)return;state.quizAnswered=true;const correct=Number(b.dataset.answer)===Number(q.answer);b.classList.add(correct?'correct':'wrong');if(!correct)$('quizOptions').querySelector(`[data-answer="${q.answer}"]`)?.classList.add('correct');$('quizFeedback').textContent=(correct?'Correct! ':'Not quite. ')+(q.explanation||'Review the notes and try again');});
+  $('nextQuiz').onclick=()=>{state.quizAnswered=false;if(state.quiz.length)state.quizIndex=((state.quizIndex||0)+1)%state.quiz.length;renderMaterials();};
+ }
+}
+function renderChart(){
+ const range=$('chartRange').value;
+ const data=range==='recent'?state.results.slice(-4):state.results;
+ const width=540,height=180,padL=28,padR=12,padT=13,padB=16;
+ const x=i=>padL+(data.length<=1?0:i*(width-padL-padR)/(data.length-1));
+ const y=v=>padT+(100-v)*(height-padT-padB)/100;
+ const grid=[0,25,50,75,100].map(v=>`<line x1="${padL}" y1="${y(v)}" x2="${width-padR}" y2="${y(v)}" stroke="#eff0f6" stroke-dasharray="3 4"/><text x="0" y="${y(v)+3}" font-size="9" fill="#a0a4b5">${v}</text>`).join('');
+ const series=type=>data.map((d,i)=>({...d,i})).filter(d=>d.type===type);
+ const makePath=arr=>arr.map((d,i)=>(i?'L':'M')+x(d.i)+','+y(d.score)).join(' ');
+ const dots=type=>series(type).map(d=>`<circle cx="${x(d.i)}" cy="${y(d.score)}" r="4" fill="${type==='quiz'?'#7567f8':'#2dbda8'}" stroke="white" stroke-width="2"><title>${escapeHtml(d.name)}: ${d.score}%</title></circle>`).join('');
+ const pathQuiz=series('quiz'),pathTest=series('test');
+ const targetY=y(80);
+ $('chartWrap').innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Study scores over time">${grid}<line x1="${padL}" y1="${targetY}" x2="${width-padR}" y2="${targetY}" stroke="#f4a340" stroke-dasharray="5 4" opacity=".8"/><path d="${makePath(pathQuiz)}" fill="none" stroke="#7567f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/> <path d="${makePath(pathTest)}" fill="none" stroke="#2dbda8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots('quiz')}${dots('test')}</svg>`;
+ $('chartLabels').innerHTML=data.map(d=>`<span>${escapeHtml(d.label)}</span>`).join('');
+ const scores=state.results.map(r=>r.score);
+ $('latestScore').textContent=scores.length?scores[scores.length-1]+'%':'—';
+ const delta=scores.length>1?scores[scores.length-1]-scores[0]:0;
+ $('scoreChange').textContent=scores.length>1?(delta>0?'+':'')+delta+' pts':'—';
+ $('scoreChange').className=delta>=0?'positive':'negative';
+ $('resultCount').textContent=state.results.length;
+}
+async function addFile(file){
+ const ext=file.name.split('.').pop().toLowerCase();
+ const item={name:file.name,size:file.size<1024?file.size+' B':(file.size/1024).toFixed(0)+' KB'};
+ if(!state.files.some(f=>f.name===item.name && f.size===item.size)) state.files.push(item);
+ renderLibrary();updateMetrics();
+ $('uploadStatus').style.display='block';$('uploadStatus').textContent=`Reading ${file.name}…`;
+ try {
+  const form=new FormData();form.append('file',file);
+  const response=await fetch('/api/upload',{method:'POST',body:form});
+  const result=await response.json();
+  if(!response.ok) throw new Error(result.error||'Could not read this file');
+  state.currentSource=result.text;state.currentSourceName=file.name;saveState();
+  $('uploadStatus').textContent=`${file.name} imported (${result.characters.toLocaleString()} characters). Select “Generate with Gemma” to create a study kit.`;
+  toast('Study material imported successfully');
+ } catch(err) {
+  $('uploadStatus').textContent=`Could not extract ${file.name}: ${err.message}. Make sure the StudySpace backend is running and the file type is supported.`;
+  toast('Import failed — check the backend');
+ }
+}
+async function generateStudyKit(){
+ if(!state.currentSource.trim()){toast('Upload a study file first');return}
+ const btn=$('regenerateBtn');const old=btn.textContent;btn.disabled=true;btn.textContent='Generating…';
+ $('uploadStatus').style.display='block';$('uploadStatus').textContent='Gemma is reading your material and creating notes, quiz questions, and flashcards…';
+ try{
+  const response=await fetch('/api/generate-study-kit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:state.currentSource,filename:state.currentSourceName})});
+  const result=await response.json();if(!response.ok)throw new Error(result.error||'Generation failed');
+  const kit=result.study_kit;
+  if(!Array.isArray(kit.notes)||!Array.isArray(kit.quiz)||!Array.isArray(kit.flashcards))throw new Error('The model returned an unexpected format. Please try again.');
+  state.notes=kit.notes.map(n=>Array.isArray(n)?n:[n.title||'Key idea',n.content||n.text||'']);
+  state.quiz=kit.quiz.map(q=>({question:String(q.question||''),options:Array.isArray(q.options)?q.options.map(String):[],answer:Number(q.answer),explanation:String(q.explanation||'')})).filter(q=>q.question&&q.options.length>=2&&q.answer>=0&&q.answer<q.options.length);
+  state.flashcards=kit.flashcards.map(c=>({front:String(c.front||c.question||''),back:String(c.back||c.answer||'')})).filter(c=>c.front&&c.back);
+  if(!state.notes.length||!state.flashcards.length||!state.quiz.length)throw new Error('The model returned an incomplete study kit. Try again with a shorter or clearer document.');
+  state.quizIndex=0;state.flashIndex=0;state.quizAnswered=false;state.activeTab='notes';saveState();renderMaterials();
+  $('uploadStatus').textContent=`Study kit generated from ${state.currentSourceName} using ${result.model}. Review it against your source before relying on it.`;toast('Your AI study kit is ready ✨');
+ }catch(err){$('uploadStatus').textContent=`AI generation failed: ${err.message}. Check that Ollama is running and the configured model is installed.`;toast('Could not generate study kit');}
+ finally{btn.disabled=false;btn.textContent=old;}
+}
+$('chooseFiles').onclick=()=>$('fileInput').click();
+$('fileInput').addEventListener('change',e=>{[...e.target.files].forEach(addFile);e.target.value=''});
+const drop=$('dropZone');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');[...e.dataTransfer.files].forEach(addFile)});
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{state.activeTab=b.dataset.tab;renderMaterials()}));
+$('regenerateBtn').onclick=generateStudyKit;
+$('taskForm').addEventListener('submit',e=>{e.preventDefault();const name=$('taskInput').value.trim();if(!name)return;state.tasks.push({id:Date.now(),name,priority:$('taskPriority').value,done:false});$('taskInput').value='';renderTasks();toast('Assignment added to your list')});
+$('addTaskBtn').onclick=()=>$('taskInput').focus();
+$('addExamBtn').onclick=()=>{$('examForm').style.display=$('examForm').style.display==='none'?'flex':'none';if($('examForm').style.display==='flex')$('examName').focus()};
+$('examForm').addEventListener('submit',e=>{e.preventDefault();const name=$('examName').value.trim(),date=$('examDate').value;if(!name||!date)return;state.exams.push({id:Date.now(),name,date});$('examName').value='';$('examDate').value='';$('examForm').style.display='none';renderExams();toast('Exam added to your calendar 📅')});
+$('addScoreBtn').onclick=()=>{const name=$('scoreName').value.trim(),score=Number($('scoreValue').value),type=$('scoreType').value;if(!name||$('scoreValue').value===''||score<0||score>100){toast('Add a name and a mark from 0 to 100');return}state.results.push({name,type,score,label:name.length>12?name.slice(0,10)+'…':name});$('scoreName').value='';$('scoreValue').value='';renderChart();saveState();toast('Progress updated! Keep going 📈')};
+$('chartRange').onchange=renderChart;
+function paintTimer(){const m=Math.floor(state.timerSeconds/60),s=state.timerSeconds%60;$('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;$('focusProgress').style.width=((25*60-state.timerSeconds)/(25*60)*100)+'%'}
+function stopTimer(){clearInterval(state.timerInterval);state.timerInterval=null;state.timerRunning=false;$('timerStart').textContent='▶ Resume focus'}
+$('timerStart').onclick=()=>{
+ if(state.timerRunning){stopTimer();$('timerCaption').textContent='Paused — take a breath';return}
+ if(state.timerSeconds<=0)state.timerSeconds=25*60;
+ state.timerRunning=true;$('timerStart').textContent='Ⅱ Pause';
+ $('timerCaption').textContent='One thing at a time. You’ve got this 💜';
+ state.timerInterval=setInterval(()=>{state.timerSeconds--;state.focusSeconds++;paintTimer();updateMetrics();if(state.timerSeconds<=0){stopTimer();$('timerCaption').textContent='Session complete! You did it 🎉';toast('Focus session complete — amazing work!');state.timerSeconds=25*60;paintTimer();$('timerCaption').textContent='Session complete! Start another when ready.'}},1000);
+};
+$('timerReset').onclick=()=>{stopTimer();state.timerSeconds=25*60;paintTimer();$('timerCaption').textContent='Ready when you are ✨';$('timerStart').textContent='▶ Start focus'};
+document.querySelectorAll('[data-scroll]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-scroll]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.scroll).scrollIntoView({behavior:'smooth',block:'start'})});
+renderMaterials();renderTasks();renderExams();renderChart();paintTimer();updateMetrics();
+fetch('/api/health').then(r=>r.json()).then(info=>{if(!info.ok){$('uploadStatus').style.display='block';$('uploadStatus').textContent='Ollama is not reachable. Open Ollama before generating AI study kits.';}else if(!info.model_installed){$('uploadStatus').style.display='block';$('uploadStatus').textContent=`Ollama is running, but model “${info.model}” is not installed. Run: ollama pull ${info.model}`;}}).catch(()=>{ $('uploadStatus').style.display='block';$('uploadStatus').textContent='Start StudySpace with the Python backend (see README) to enable document import and Gemma AI generation.'; });
+if(!localStorage.getItem('studyspace-welcome-seen'))setTimeout(()=>$('welcomeModal').classList.add('show'),500);
+const closeWelcome=()=>{localStorage.setItem('studyspace-welcome-seen','1');$('welcomeModal').classList.remove('show')};
+$('saveWelcome').onclick=()=>{const task=$('welcomeTask').value.trim(),exam=$('welcomeExam').value.trim(),date=$('welcomeDate').value;if(task)state.tasks.push({id:Date.now(),name:task,priority:'medium',done:false});if(exam&&date)state.exams.push({id:Date.now()+1,name:exam,date});renderTasks();renderExams();closeWelcome();toast('Your study space is ready ✨')};
+$('skipWelcome').onclick=closeWelcome;
+</script>
+</body>
+</html>
